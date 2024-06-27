@@ -1,4 +1,4 @@
-# Circle API Client for Elixir
+# CircleCI API Client for Elixir
 
 [![Hex.pm](https://img.shields.io/hexpm/v/circleci_client)](https://hex.pm/packages/circleci_client)
 [![Documentation](https://img.shields.io/badge/hex-docs-blue)](https://hexdocs.pm/circleci_client)

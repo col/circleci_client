@@ -84,7 +84,6 @@ defmodule CircleciClient.MixProject do
       description: "CircleCI API Client for Elixir",
       files: [
         ".formatter.exs",
-        "guides",
         "lib",
         "LICENSE",
         "mix.exs",

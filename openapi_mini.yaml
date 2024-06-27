@@ -1,0 +1,1209 @@
+openapi: 3.0.3
+info:
+  version: v2
+  title: CircleCI API
+  description: |-
+    This describes the resources that make up the CircleCI API v2.
+
+    # Authentication
+
+    <!-- ReDoc-Inject: <security-definitions> -->
+  license:
+    name: MIT
+servers:
+  - url: https://circleci.com/api/v2
+security:
+  - api_key_header: []
+paths:
+  /pipeline/{pipeline_id}:
+    get:
+      summary: Get a pipeline by ID
+      description: Returns a pipeline by the pipeline ID.
+      tags:
+        - Pipeline
+      operationId: getPipelineById
+      responses:
+        '200':
+          description: A pipeline object.
+          links:
+            ProjectFromPipeline:
+              operationId: getProjectBySlug
+              parameters:
+                project_slug: $response.body#/project_slug
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pipeline'
+        default:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+          description: Error response.
+      parameters:
+        - in: path
+          name: pipeline_id
+          description: The unique ID of the pipeline.
+          schema:
+            type: string
+            format: uuid
+          required: true
+          example: 5034460f-c7c4-4c43-9457-de07e2029e7b
+  /project/{project_slug}/job/{job_number}:
+    get:
+      summary: Get job details
+      description: Returns job details.
+      tags:
+        - Job
+      operationId: getJobDetails
+      responses:
+        '200':
+          description: Job details.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  web_url:
+                    type: string
+                    description: URL of the job in CircleCI Web UI.
+                  project:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      slug:
+                        type: string
+                        description: >-
+                          Project slug in the form
+                          `vcs-slug/org-name/repo-name`. The `/` characters may
+                          be URL-escaped. For projects that use GitLab or GitHub
+                          App, use `circleci` as the `vcs-slug`, replace
+                          `org-name` with the organization ID (found in
+                          Organization Settings), and replace `repo-name` with
+                          the project ID (found in Project Settings).
+                        example: gh/CircleCI-Public/api-preview-docs
+                      name:
+                        type: string
+                        description: The name of the project
+                        example: api-preview-docs
+                      external_url:
+                        type: string
+                        description: URL to the repository hosting the project's code
+                        example: https://github.com/CircleCI-Public/api-preview-docs
+                    required:
+                      - id
+                      - slug
+                      - name
+                      - external_url
+                    description: Information about a project.
+                  parallel_runs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        index:
+                          type: integer
+                          format: int64
+                          description: Index of the parallel run.
+                        status:
+                          type: string
+                          description: Status of the parallel run.
+                      required:
+                        - index
+                        - status
+                      description: Info about a status of the parallel run.
+                    description: Info about parallels runs and their status.
+                  started_at:
+                    type: string
+                    format: date-time
+                    description: The date and time the job started.
+                  latest_workflow:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        description: The unique ID of the workflow.
+                      name:
+                        type: string
+                        description: The name of the workflow.
+                        example: build-and-test
+                    required:
+                      - id
+                      - name
+                    description: Info about the latest workflow the job was a part of.
+                  name:
+                    type: string
+                    description: The name of the job.
+                  executor:
+                    type: object
+                    properties:
+                      resource_class:
+                        type: string
+                        description: Resource class name.
+                      type:
+                        type: string
+                        description: Executor type.
+                    required:
+                      - resource_class
+                    description: Information about executor used for a job.
+                  parallelism:
+                    type: integer
+                    format: int64
+                    description: A number of parallel runs the job has.
+                  status:
+                    enum:
+                      - success
+                      - running
+                      - not_run
+                      - failed
+                      - retried
+                      - queued
+                      - not_running
+                      - infrastructure_fail
+                      - timedout
+                      - on_hold
+                      - terminated-unknown
+                      - blocked
+                      - canceled
+                      - unauthorized
+                    type: string
+                    description: The current status of the job.
+                  number:
+                    type: integer
+                    format: int64
+                    description: The number of the job.
+                  pipeline:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        description: The unique ID of the pipeline.
+                        example: 5034460f-c7c4-4c43-9457-de07e2029e7b
+                    required:
+                      - id
+                    description: Info about a pipeline the job is a part of.
+                  duration:
+                    type: integer
+                    format: int64
+                    x-nullable: true
+                    description: Duration of a job in milliseconds.
+                  created_at:
+                    type: string
+                    format: date-time
+                    description: The time when the job was created.
+                  messages:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                          description: Message type.
+                        message:
+                          type: string
+                          description: Information describing message.
+                        reason:
+                          type: string
+                          description: >-
+                            Value describing the reason for message to be added
+                            to the job.
+                      required:
+                        - type
+                        - message
+                      description: Message from CircleCI execution platform.
+                    description: Messages from CircleCI execution platform.
+                  contexts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          description: The name of the context.
+                      required:
+                        - name
+                      description: Information about the context.
+                    description: List of contexts used by the job.
+                  organization:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        description: The name of the organization.
+                    required:
+                      - name
+                    description: Information about an organization.
+                  queued_at:
+                    type: string
+                    format: date-time
+                    description: The time when the job was placed in a queue.
+                  stopped_at:
+                    type: string
+                    format: date-time
+                    x-nullable: true
+                    description: The time when the job stopped.
+                required:
+                  - number
+                  - name
+                  - status
+                  - created_at
+                  - queued_at
+                  - duration
+                  - executor
+                  - project
+                  - organization
+                  - contexts
+                  - web_url
+                  - parallel_runs
+                  - latest_workflow
+                  - pipeline
+                  - parallelism
+                  - messages
+                description: Job Details
+                title: Job Details
+        default:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+          description: Error response.
+      parameters:
+        - in: path
+          name: job_number
+          description: The number of the job.
+          schema: {}
+          required: true
+          example: '123'
+        - in: path
+          name: project_slug
+          description: >-
+            Project slug in the form `vcs-slug/org-name/repo-name`. The `/`
+            characters may be URL-escaped. For projects that use GitLab or
+            GitHub App, use `circleci` as the `vcs-slug`, replace `org-name`
+            with the organization ID (found in Organization Settings), and
+            replace `repo-name` with the project ID (found in Project Settings).
+          schema:
+            type: string
+          required: true
+          example: gh/CircleCI-Public/api-preview-docs
+          allowReserved: true
+  /project/{project_slug}/pipeline/{pipeline_number}:
+    get:
+      summary: Get a pipeline by pipeline number
+      description: Returns a pipeline by the pipeline number.
+      tags:
+        - Pipeline
+      operationId: getPipelineByNumber
+      responses:
+        '200':
+          description: A pipeline object.
+          links:
+            ProjectFromPipeline:
+              operationId: getProjectBySlug
+              parameters:
+                project_slug: $response.body#/project_slug
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pipeline'
+        default:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+          description: Error response.
+      parameters:
+        - in: path
+          name: project_slug
+          description: >-
+            Project slug in the form `vcs-slug/org-name/repo-name`. The `/`
+            characters may be URL-escaped. For projects that use GitLab or
+            GitHub App, use `circleci` as the `vcs-slug`, replace `org-name`
+            with the organization ID (found in Organization Settings), and
+            replace `repo-name` with the project ID (found in Project Settings).
+          schema:
+            type: string
+          required: true
+          example: gh/CircleCI-Public/api-preview-docs
+          allowReserved: true
+        - in: path
+          name: pipeline_number
+          description: The number of the pipeline.
+          schema: {}
+          required: true
+          example: '123'
+  /workflow/{id}:
+    get:
+      summary: Get a workflow
+      description: Returns summary fields of a workflow by ID.
+      tags:
+        - Workflow
+      operationId: getWorkflowById
+      responses:
+        '200':
+          description: A workflow object.
+          links:
+            ProjectFromGetWorkflow:
+              operationId: getProjectBySlug
+              parameters:
+                project_slug: $response.body#/project_slug
+            WorkflowJobs:
+              operationId: listWorkflowJobs
+              parameters:
+                id: $response.body#/id
+            CancelWorkflow:
+              operationId: cancelWorkflow
+              parameters:
+                id: $response.body#/id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        default:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+          description: Error response.
+      parameters:
+        - in: path
+          name: id
+          description: The unique ID of the workflow.
+          schema:
+            type: string
+            format: uuid
+          required: true
+          example: 5034460f-c7c4-4c43-9457-de07e2029e7b
+  /workflow/{id}/job:
+    get:
+      summary: Get a workflow's jobs
+      description: Returns a sequence of jobs for a workflow.
+      tags:
+        - Workflow
+      operationId: listWorkflowJobs
+      responses:
+        '200':
+          description: A paginated sequence of jobs.
+          links:
+            NextWorkflowJobPage:
+              operationId: listWorkflowJobs
+              parameters:
+                id: $request.path.id
+                page-token: $response.body#/next_page_token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Job'
+                  next_page_token:
+                    type: string
+                    x-nullable: true
+                    description: >-
+                      A token to pass as a `page-token` query parameter to
+                      return the next page of results.
+                required:
+                  - items
+                title: WorkflowJobListResponse
+        default:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+          description: Error response.
+      parameters:
+        - in: path
+          name: id
+          description: The unique ID of the workflow.
+          schema:
+            type: string
+            format: uuid
+          required: true
+          example: 5034460f-c7c4-4c43-9457-de07e2029e7b
+components:
+  securitySchemes:
+    api_key_header:
+      type: apiKey
+      name: Circle-Token
+      in: header
+      description: >-
+        Project API tokens are not supported for API v2. Use a personal API
+        token.
+    basic_auth:
+      description: >-
+        HTTP basic authentication. The username should be set as the
+        circle-token value, and the password should be left blank. Note that
+        project tokens are currently not supported on API v2.
+      type: http
+      scheme: basic
+    api_key_query:
+      type: apiKey
+      name: circle-token
+      in: query
+      description: >-
+        DEPRECATED - we will remove this option in the future. Project API
+        tokens are not supported for API v2. Use a personal API token.
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The unique ID of the user.
+        login:
+          type: string
+          description: The login information for the user on the VCS.
+          title: Login
+        name:
+          type: string
+          description: The name of the user.
+      required:
+        - id
+        - login
+        - name
+    Pipeline:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The unique ID of the pipeline.
+          example: 5034460f-c7c4-4c43-9457-de07e2029e7b
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                enum:
+                  - config
+                  - config-fetch
+                  - timeout
+                  - permission
+                  - other
+                  - trigger-rule
+                  - plan
+                type: string
+                description: The type of error.
+              message:
+                type: string
+                description: A human-readable error message.
+            required:
+              - type
+              - message
+            description: An error with a type and message.
+          description: >-
+            A sequence of errors that have occurred within the
+            pipeline.
+        project_slug:
+          type: string
+          description: The project-slug for the pipeline.
+          example: gh/CircleCI-Public/api-preview-docs
+        updated_at:
+          type: string
+          format: date-time
+          description: The date and time the pipeline was last updated.
+        number:
+          type: integer
+          format: int64
+          description: The number of the pipeline.
+          example: '25'
+        trigger_parameters:
+          type: object
+          additionalProperties:
+            anyOf:
+              - type: string
+              - type: integer
+                format: int64
+              - type: boolean
+              - type: object
+        state:
+          enum:
+            - created
+            - errored
+            - setup-pending
+            - setup
+            - pending
+          type: string
+          description: The current state of the pipeline.
+        created_at:
+          type: string
+          format: date-time
+          description: The date and time the pipeline was created.
+        trigger:
+          type: object
+          properties:
+            type:
+              enum:
+                - schedule
+                - explicit
+                - api
+                - webhook
+              type: string
+              description: The type of trigger.
+            received_at:
+              type: string
+              format: date-time
+              description: The date and time the trigger was received.
+            actor:
+              type: object
+              properties:
+                login:
+                  type: string
+                  description: >-
+                    The login information for the user on the
+                    VCS.
+                  title: Login
+                avatar_url:
+                  type: string
+                  x-nullable: true
+                  description: URL to the user's avatar on the VCS
+              required:
+                - login
+              description: The user who triggered the Pipeline.
+          required:
+            - type
+            - received_at
+            - actor
+          description: A summary of the trigger.
+        vcs:
+          type: object
+          properties:
+            provider_name:
+              type: string
+              description: >-
+                Name of the VCS provider (e.g. GitHub,
+                Bitbucket).
+              example: GitHub
+            target_repository_url:
+              type: string
+              description: >-
+                URL for the repository the trigger targets (i.e.
+                the repository where the PR will be merged). For
+                fork-PR pipelines, this is the URL to the parent
+                repo. For other pipelines, the `origin_` and
+                `target_repository_url`s will be the same.
+              example: >-
+                https://github.com/CircleCI-Public/api-preview-docs
+            branch:
+              type: string
+              description: >-
+                The branch where the pipeline ran. The HEAD
+                commit on this branch was used for the pipeline.
+                Note that `branch` and `tag` are mutually
+                exclusive. To trigger a pipeline for a PR by
+                number use `pull/<number>/head` for the PR ref
+                or `pull/<number>/merge` for the merge ref
+                (GitHub only).
+              example: feature/design-new-api
+            review_id:
+              type: string
+              description: The code review id.
+              example: '123'
+            review_url:
+              type: string
+              description: The code review URL.
+              example: >-
+                https://github.com/CircleCI-Public/api-preview-docs/pull/123
+            revision:
+              type: string
+              description: The code revision the pipeline ran.
+              example: f454a02b5d10fcccfd7d9dd7608a76d6493a98b4
+            tag:
+              type: string
+              description: >-
+                The tag used by the pipeline. The commit that
+                this tag points to was used for the pipeline.
+                Note that `branch` and `tag` are mutually
+                exclusive.
+              example: v3.1.4159
+            commit:
+              type: object
+              properties:
+                subject:
+                  type: string
+                  x-nullable: true
+                  description: The subject of the commit message.
+                body:
+                  type: string
+                  x-nullable: true
+                  description: The body of the commit message.
+              required:
+                - subject
+                - body
+              description: The latest commit in the pipeline.
+            origin_repository_url:
+              type: string
+              description: >-
+                URL for the repository where the trigger
+                originated. For fork-PR pipelines, this is the
+                URL to the fork. For other pipelines the
+                `origin_` and `target_repository_url`s will be
+                the same.
+              example: >-
+                https://github.com/CircleCI-Public/api-preview-docs
+          required:
+            - provider_name
+            - origin_repository_url
+            - target_repository_url
+            - revision
+          description: VCS information for the pipeline.
+      required:
+        - id
+        - number
+        - project_slug
+        - created_at
+        - errors
+        - state
+        - trigger
+      description: A pipeline response.
+      title: Pipeline
+    Workflow:
+      type: object
+      properties:
+        pipeline_id:
+          type: string
+          format: uuid
+          description: The ID of the pipeline this workflow belongs to.
+          example: 5034460f-c7c4-4c43-9457-de07e2029e7b
+        canceled_by:
+          type: string
+          format: uuid
+        id:
+          type: string
+          format: uuid
+          description: The unique ID of the workflow.
+        name:
+          type: string
+          description: The name of the workflow.
+          example: build-and-test
+        project_slug:
+          type: string
+          description: >-
+            The project-slug for the pipeline this workflow belongs
+            to.
+          example: gh/CircleCI-Public/api-preview-docs
+        errored_by:
+          type: string
+          format: uuid
+        tag:
+          type: string
+          x-nullable: true
+          description: Tag used for the workflow
+          example: setup
+        status:
+          enum:
+            - success
+            - running
+            - not_run
+            - failed
+            - error
+            - failing
+            - on_hold
+            - canceled
+            - unauthorized
+          type: string
+          description: The current status of the workflow.
+        started_by:
+          type: string
+          format: uuid
+        pipeline_number:
+          type: integer
+          format: int64
+          description: The number of the pipeline this workflow belongs to.
+          example: '25'
+        created_at:
+          type: string
+          format: date-time
+          description: The date and time the workflow was created.
+        stopped_at:
+          type: string
+          format: date-time
+          x-nullable: true
+          description: The date and time the workflow stopped.
+      required:
+        - id
+        - name
+        - status
+        - created_at
+        - pipeline_id
+        - pipeline_number
+        - project_slug
+        - started_by
+      description: A workflow
+      title: Workflow
+    Job:
+      type: object
+      properties:
+        canceled_by:
+          type: string
+          format: uuid
+          description: The unique ID of the user.
+        dependencies:
+          type: array
+          items:
+            type: string
+            format: uuid
+            description: The unique ID of the job.
+          description: >-
+            A sequence of the unique job IDs for the jobs that
+            this job depends upon in the workflow.
+        job_number:
+          type: integer
+          format: int64
+          description: The number of the job.
+        id:
+          type: string
+          format: uuid
+          description: The unique ID of the job.
+        started_at:
+          type: string
+          format: date-time
+          description: The date and time the job started.
+        name:
+          type: string
+          description: The name of the job.
+        approved_by:
+          type: string
+          format: uuid
+          description: The unique ID of the user.
+        project_slug:
+          type: string
+          description: The project-slug for the job.
+          example: gh/CircleCI-Public/api-preview-docs
+        status:
+          enum:
+            - success
+            - running
+            - not_run
+            - failed
+            - retried
+            - queued
+            - not_running
+            - infrastructure_fail
+            - timedout
+            - on_hold
+            - terminated-unknown
+            - blocked
+            - canceled
+            - unauthorized
+          type: string
+          description: The current status of the job.
+        type:
+          enum:
+            - build
+            - approval
+          type: string
+          description: The type of job.
+        stopped_at:
+          type: string
+          format: date-time
+          x-nullable: true
+          description: The time when the job stopped.
+        approval_request_id:
+          type: string
+          format: uuid
+          description: The unique ID of the job.
+      required:
+        - id
+        - name
+        - dependencies
+        - project_slug
+        - status
+        - type
+      description: Job
+      title: Job
+    Collaboration:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          x-nullable: true
+          description: The UUID of the organization
+        vcs_type:
+          type: string
+          description: The VCS provider
+        name:
+          type: string
+          description: The name of the organization
+        avatar_url:
+          type: string
+          description: URL to the user's avatar on the VCS
+        slug:
+          type: string
+          description: The slug of the organization
+      required:
+        - vcs_type
+        - name
+        - avatar_url
+        - slug
+      title: Collaboration
+    Project:
+      type: object
+      properties:
+        slug:
+          type: string
+          description: >-
+            Project slug in the form `vcs-slug/org-name/repo-name`.
+            The `/` characters may be URL-escaped. For projects that
+            use GitLab or GitHub App, use `circleci` as the
+            `vcs-slug`, replace `org-name` with the organization ID
+            (found in Organization Settings), and replace `repo-name`
+            with the project ID (found in Project Settings).
+          example: gh/CircleCI-Public/api-preview-docs
+        name:
+          type: string
+          description: The name of the project
+          example: api-preview-docs
+        id:
+          type: string
+          format: uuid
+        organization_name:
+          type: string
+          description: The name of the organization the project belongs to
+          example: CircleCI-Public
+        organization_slug:
+          type: string
+          description: The slug of the organization the project belongs to
+          example: CircleCI-Public
+        organization_id:
+          type: string
+          format: uuid
+          description: The id of the organization the project belongs to
+          example: CircleCI-Public
+        vcs_info:
+          type: object
+          properties:
+            vcs_url:
+              type: string
+              description: URL to the repository hosting the project's code
+              example: https://github.com/CircleCI-Public/api-preview-docs
+            provider:
+              enum:
+                - Bitbucket
+                - CircleCI
+                - GitHub
+              type: string
+              description: The VCS provider
+            default_branch:
+              type: string
+              example: main
+          required:
+            - vcs_url
+            - provider
+            - default_branch
+          description: >-
+            Information about the VCS that hosts the project source
+            code.
+      required:
+        - slug
+        - name
+        - id
+        - organization_name
+        - organization_slug
+        - organization_id
+        - vcs_info
+      description: 'NOTE: The definition of Project is subject to change.'
+      title: Project
+  responses:
+    BadRequest:
+      content:
+        application/json:
+          schema:
+            properties:
+              error:
+                example: 'OwnerID: must be a valid UUID.'
+                type: string
+            required:
+              - error
+            type: object
+      description: |
+        The request is malformed (e.g, a given path parameter is invalid)
+    Forbidden:
+      content:
+        application/json:
+          schema:
+            properties:
+              error:
+                example: Forbidden
+                type: string
+            required:
+              - error
+            type: object
+      description: |
+        The user is forbidden from making this request
+    InternalServerError:
+      content:
+        application/json:
+          schema:
+            properties:
+              error:
+                example: internal server error
+                type: string
+            required:
+              - error
+            type: object
+      description: Something unexpected happened on the server.
+    Unauthenticated:
+      content:
+        application/json:
+          schema:
+            properties:
+              error:
+                example: unauthenticated
+                type: string
+            required:
+              - error
+            type: object
+      description: |
+        The request is unauthenticated
+    Unauthorized:
+      content:
+        application/json:
+          schema:
+            properties:
+              error:
+                example: Unauthorized
+                type: string
+            required:
+              - error
+            type: object
+      description: |
+        The request is unauthorized
+    UnexpectedServerError:
+      content:
+        application/json:
+          schema:
+            properties:
+              error:
+                example: unexpected server error
+                type: string
+            required:
+              - error
+            type: object
+      description: Something unexpected happened on the server.
+    401_invalid_token:
+      description: Credentials provided are invalid.
+      content:
+        application/json:
+          schema:
+            additionalProperties: false
+            properties:
+              message:
+                type: string
+          examples:
+            invalid_token:
+              summary: Token is invalid.
+              value:
+                message: Invalid token provided.
+            old_token:
+              summary: Token was generated before 2023-06-23.
+              value:
+                message: >-
+                  New format tokens are needed to authenticate this API
+                  endpoint. Create a new API token for access.
+            query_auth:
+              summary: Authentication attempted via query parameters.
+              value:
+                message: >-
+                  Support for query parameter authentication has been deprecated
+                  to improve security. Please use a supported authentication
+                  method such as header-based, or basic authentication.
+    404_entity_not_found:
+      description: Entity not found.
+      content:
+        application/json:
+          schema:
+            additionalProperties: false
+            properties:
+              message:
+                type: string
+          examples:
+            context_not_found:
+              summary: Context not found.
+              value:
+                message: Context not found.
+            org_not_found:
+              summary: Organization not found.
+              value:
+                message: Organization does not exist.
+            user_not_found:
+              summary: User not found.
+              value:
+                message: User does not exist.
+            project_not_found:
+              summary: Project not found.
+              value:
+                message: Project does not exist.
+            group_not_found:
+              summary: Group not found.
+              value:
+                message: Group does not exist.
+    429_rate_limit_exceeded:
+      description: API rate limits exceeded.
+      content:
+        application/json:
+          schema:
+            additionalProperties: false
+            properties:
+              message:
+                type: string
+                default: Rate limit exceeded.
+    500_internal_server_error:
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            additionalProperties: false
+            properties:
+              message:
+                type: string
+                default: Internal server error.
+    400_unexpected_request_body:
+      description: Unexpected request body provided.
+      content:
+        application/json:
+          schema:
+            additionalProperties: false
+            properties:
+              message:
+                type: string
+                default: Unexpected request body provided.
+    403_permission_denied:
+      description: None or insufficient credentials provided.
+      content:
+        application/json:
+          schema:
+            additionalProperties: false
+            properties:
+              message:
+                type: string
+                default: Permission denied.
+    404_project_not_found:
+      description: >-
+        Insufficient credentials for a private project, OR the organization,
+        project, or repository does not exist.
+      content:
+        application/json:
+          schema:
+            additionalProperties: false
+            properties:
+              message:
+                type: string
+                default: Project not found.
+  parameters:
+    OrgID:
+      in: path
+      name: orgID
+      required: true
+      schema:
+        format: uuid
+        type: string
+    ProjectID:
+      in: path
+      name: projectID
+      required: true
+      schema:
+        format: uuid
+        type: string
+    OwnerID:
+      in: path
+      name: ownerID
+      required: true
+      schema:
+        type: string
+    provider:
+      name: provider
+      description: >-
+        The `provider` segment of a project or org slug, the first of the three.
+        This may be a VCS. For projects that use GitLab or GitHub App, use
+        `circleci`.
+      example: gh
+      in: path
+      required: true
+      schema:
+        type: string
+    organization:
+      name: organization
+      description: >-
+        The `organization` segment of a project or org slug, the second of the
+        three. For GitHub OAuth or Bitbucket projects, this is the organization
+        name. For projects that use GitLab or GitHub App, use the organization
+        ID (found in Organization Settings).
+      example: CircleCI-Public
+      in: path
+      required: true
+      schema:
+        type: string
+    project:
+      name: project
+      description: >-
+        The `project` segment of a project slug, the third of the three. For
+        GitHub OAuth or Bitbucket projects, this is the repository name. For
+        projects that use GitLab or GitHub App, use the project ID (found in
+        Project Settings).
+      example: api-preview-docs
+      in: path
+      required: true
+      schema:
+        type: string
+    org_id:
+      name: org_id
+      description: An opaque identifier of an organization.
+      example: b9291e0d-a11e-41fb-8517-c545388b5953
+      in: path
+      required: true
+      schema:
+        type: string
+    user_id:
+      name: user_id
+      description: An opaque identifier of a user.
+      example: a68942a8-c217-4d92-96e5-3b47f9a2f0d9
+      in: path
+      required: true
+      schema:
+        type: string
+    limit:
+      name: limit
+      in: query
+      description: The number of results per page.
+      schema:
+        type: integer
+    next_page_token:
+      name: next_page_token
+      in: query
+      description: Specify what page of results to fetch.
+      schema:
+        type: string
+    project_id:
+      name: project_id
+      description: An opaque identifier of a project.
+      example: 39723015-b399-4601-9ff6-bd1bfbed8fa8
+      in: path
+      required: true
+      schema:
+        type: string
